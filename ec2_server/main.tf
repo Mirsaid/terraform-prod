@@ -6,9 +6,7 @@ resource "aws_instance" "ec2_instance" {
   vpc_security_group_ids = [var.ec2_sg_id]
   availability_zone      = var.availability_zone
   subnet_id              = var.private_subnet_1a_ec2_id
-  tags = {
-    Name = "Server"
-  }
+
 
     user_data = <<-EOF
               #!/bin/bash
@@ -24,10 +22,18 @@ resource "aws_instance" "ec2_instance" {
     root_block_device {
     delete_on_termination = false
     volume_size = 15
+    volume_type = "gp3"
+    #root_device_name = "/dev/sda1" 
     #encrypted = true
     tags = {
       Name = "EC2 Root Volume"
+      Backup  = "true"
     }
+  }
+    tags = {
+    Name = "EC2 Instance"
+    Role    = "ec2"
+    
   }
 }
 

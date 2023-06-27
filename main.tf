@@ -101,6 +101,11 @@ module "vpc_endpoint" {
   #private_sub_endpoint_gw_id = module.routes.private_sub_endpoint_gw_id
 }
 
+module "backups" {
+  source = "./backups"
+  example_aws_backup_service_role_arn = module.iam.example_aws_backup_service_role_arn
+}
+
 # module "key_pair" {
 #     source = "./key_pair"
 # }
