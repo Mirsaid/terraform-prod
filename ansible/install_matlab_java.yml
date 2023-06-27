@@ -1,0 +1,143 @@
+---
+- name: Install Matlab Compiler Runtime (MCR) 2021a
+  hosts: all
+  become: true
+  gather_facts: no
+  vars:
+    mcr_version: R2021a
+    #mcr_install_dir: /mnt/data/mcr/{{ mcr_version }} #change to ebs or efs volume
+    mcr_install_dir: /mnt/efs #change to ebs or efs volume
+    matlab_user: simudl
+  tasks:
+
+    - name: Update package list
+      apt:
+        update_cache: yes
+      #when: ansible_facts['os_family'] == 'Debian'
+  
+    - name: Install OpenJDK 8 on Debian-based systems
+      apt:
+        name: openjdk-8-jre
+        state: present
+        update_cache: yes
+ #    when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install required packages
+      apt:
+        name:
+          - unzip
+          - libglu1
+        state: present
+
+#url: https://ssd.mathworks.com/supportfiles/downloads/R2021a/Release/8/deployment_files/installer/complete/glnxa64/MATLAB_Runtime_R2021a_Update_8_glnxa64.zip
+    - name: Create MCR installation directory
+      file:
+        path: "{{ mcr_install_dir }}"
+        state: directory
+        mode: 0755
+
+    - name: Check if the folder exists
+      stat:
+        #path: /mnt/data/mcr/R2021a
+        path: /mnt/efs
+
+      register: folder_stat_result
+
+    - name: Check if MCR is installed
+      stat:
+        path: "{{ mcr_install_dir }}/mcr_installed"
+      register: mcr_install_check
+
+    - name: Download MCR installer #it take a lot of time to download, so I need to find out a solution
+      get_url:
+        url: "https://ssd.mathworks.com/supportfiles/downloads/R2021a/Release/8/deployment_files/installer/complete/glnxa64/MATLAB_Runtime_R2021a_Update_8_glnxa64.zip"
+        dest: "/tmp/mcr_installer.zip"
+      when: not mcr_install_check.stat.exists
+      
+    - name: Extract MCR installer 
+      unarchive:
+        src: "/tmp/mcr_installer.zip"
+        dest: "{{ mcr_install_dir }}"
+        remote_src: yes #check if already done pass install
+      when: not mcr_install_check.stat.exists
+
+    - name: Set LD_LIBRARY_PATH
+      lineinfile:
+        path: /etc/environment
+        regexp: '^LD_LIBRARY_PATH='
+        #line: 'LD_LIBRARY_PATH={{ mcr_install_dir }}/v910/runtime/glna64:{{ mcr_install_dir }}/v910/bin/glnxa64:{{ mcr_install_dir }}/v910/sys/os/glnxa64'
+        line: 'LD_LIBRARY_PATH=/mnt/efs/v910/runtime/glnxa64:/mnt/efs/v910/bin/glnxa64:/mnt/efs/v910/sys/os/glnxa64:/mnt/efs/v910/extern/bin/glnxa64'
+        state: present
+        
+    - name: Source environment variables
+      shell: source /etc/environment
+      become: yes
+
+    # - name: Debug mcr_install_dir
+    #   debug:
+    #     var: mcr_install_dir
+
+    - name: Creadte simudl group
+      group:
+        name: "{{ matlab_user }}"
+        gid: 1027
+        state: present
+         
+    - name: Create simudl user
+      user:
+        name: "{{ matlab_user }}"
+        uid: 1027
+        group: "{{ matlab_user }}"
+        home: /home/simudl
+        shell: /bin/bash
+        createhome: yes
+        #need to add gid and uid and group name
+      ignore_errors: yes #check this out
+      register: matlab_user_result
+
+    - name: Ensure correct ownership of home/simudl
+      file:
+        path: /home/simudl
+        state: directory
+        owner: "{{ matlab_user }}"
+        group: "{{ matlab_user }}"
+        recurse: yes
+      when: matlab_user_result.changed
+
+    - name: Change ownership of MATLAB MCR runtime directory
+      become_user: root
+      file:
+        path: "{{ mcr_install_dir }}"
+        owner: "{{ matlab_user }}"
+        group: "{{ matlab_user }}"
+        recurse: yes
+      when: matlab_user_result.changed
+
+    - name: Install MCR silently
+      become_user: "{{ matlab_user }}"
+      command: "{{ mcr_install_dir }}/install -mode silent -destinationFolder {{ mcr_install_dir }} -agreeToLicense yes"
+      args:
+        chdir: "{{ mcr_install_dir }}"
+      when: not mcr_install_check.stat.exists
+
+    - name: Debug MCR installation command
+      ansible.builtin.debug:
+        msg: "{{ mcr_install_dir }}/install -mode silent -destinationFolder {{ mcr_install_dir }} -agreeToLicense yes"
+
+    - name: Create MCR installation flag file
+      file:
+        path: "{{ mcr_install_dir }}/mcr_installed"
+        state: touch
+      when: not mcr_install_check.stat.exists
+
+    # - name: Reboot if MCR installation requires
+    #   reboot:
+    #   async: 300
+    #   poll: 0
+    #   when: reboot_required|default(false)
+
+    # - name: Remove MCR installation files #I had errors here, so I commented it out
+    #   file:
+    #     path: "{{ mcr_install_dir }}"
+    #     state: absent
+    #     recurse: yes

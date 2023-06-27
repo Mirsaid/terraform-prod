@@ -1,0 +1,88 @@
+---
+workflow:
+    rules:
+      - if: $CI_COMMIT_BRANCH != "master" && $CI_PIPELINE_SOURCE != "merge_request_event"
+        when: never
+      - when: always
+
+variables:
+  
+  TF_DIR: ${CI_PROJECT_DIR}/terraform
+  AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+  S3_BUCKET_NAME: tfstate23123
+  TF_STATE_KEY: terraformtfstate
+  TF_BACKEND_CONFIG: "-backend-config=buc ket=${S3_BUCKET_NAME} -backend-config=key=${TF_STATE_KEY} -backend-config=region=${AWS_DEFAULT_REGION}"
+
+
+stages:
+  - validate
+  - plan
+  - apply
+  - destroy
+
+image:
+  name: hashicorp/terraform:light
+  entrypoint: [""]
+
+before_script:
+
+  - terraform --version
+  - cd ${TF_DIR}
+  - terraform init $TF_BACKEND_CONFIG
+
+validate:
+  stage: validate
+  script:
+    - terraform validate
+  cache:
+    key: ${CI_COMMIT_REF_NAME}
+    paths:
+    - ${TF_DIR}/.terraform
+    policy: pull-push
+
+
+plan:
+  stage: plan
+  script:
+    - terraform plan -out tfplan.plan -input=false
+  dependencies:
+    - validate
+  cache:
+    key: ${CI_COMMIT_REF_NAME}
+    paths:
+    - ${TF_DIR}/.terraform
+    policy: pull
+  artifacts:
+      untracked: false
+      when: on_success
+      expire_in: "3 days"
+      paths:
+        - ${TF_DIR}/tfplan.plan
+
+
+apply:
+  stage: apply
+  script:
+    - terraform apply -input=false tfplan.plan
+  dependencies:
+    - plan
+  cache:
+    key: ${CI_COMMIT_REF_NAME}
+    paths:
+    - ${TF_DIR}/.terraform
+    policy: pull
+  when: manual
+
+destroy:
+  stage: destroy
+  script:
+    - terraform destroy -auto-approve
+  dependencies:
+    - plan
+    - apply
+  cache:
+    key: ${CI_COMMIT_REF_NAME}
+    paths:
+    - ${TF_DIR}/.terraform
+    policy: pull
+  when: manual

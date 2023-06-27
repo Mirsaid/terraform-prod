@@ -1,0 +1,16 @@
+*.tfstate
+
+terraform.tfstate.backup
+terraform.tfvars.stop
+./terraform.tfvars.example
+./terraform.tfvars.json
+./terraform.tfvars.json.example
+./terraform.tfvars.tf
+*.log
+*.out
+test.drawio
+test.png
+.terraform.lock.hcl
+.terraform/
+*.pem
+dependency.sh   
