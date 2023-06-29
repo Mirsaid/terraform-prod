@@ -1,6 +1,6 @@
 locals {
   backups = {
-    schedule  = "cron(00 14 ? * MON-FRI *)" /* UTC Time */
+    schedule  = "cron(17 14 ? * MON-FRI *)" /* UTC Time */
     retention = 1 // days
   }
 }

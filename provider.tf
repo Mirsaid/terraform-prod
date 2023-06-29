@@ -1,6 +1,6 @@
 variable region {
   type        = string
-  default     = ""
+  default     = "eu-central-1"
   description = "Frankfurt region"
 }
 
