@@ -54,15 +54,15 @@ module "rds" {
   vpc_id                   = module.vpc.vpc_id
 }
 
-module "bastion_host" {
-  source              = "./bastion_host"
-  vpc_id              = module.vpc.vpc_id
-  public_subnet_1a_id = module.subnets.public_subnet_1a_id
-  bastion_sg_id       = module.security_groups.bastion_sg_id
-  #key_name = module.key_pair.key_name
-  ec2_server_private_ip = module.ec2_server.ec2_server_private_ip
-  depends_on            = [module.ec2_server, module.ansible]
-}
+# module "bastion_host" {
+#   source              = "./bastion_host"
+#   vpc_id              = module.vpc.vpc_id
+#   public_subnet_1a_id = module.subnets.public_subnet_1a_id
+#   bastion_sg_id       = module.security_groups.bastion_sg_id
+#   #key_name = module.key_pair.key_name
+#   ec2_server_private_ip = module.ec2_server.ec2_server_private_ip
+#   depends_on            = [module.ec2_server, module.ansible]
+# }
 
 module "ansible" {
   source                = "./ansible"
@@ -87,6 +87,7 @@ module "security_groups" {
 
 module "iam" {
   source = "./iam"
+  bucket_name = module.s3.bucket_name
 
 }
 
@@ -101,10 +102,10 @@ module "vpc_endpoint" {
   #private_sub_endpoint_gw_id = module.routes.private_sub_endpoint_gw_id
 }
 
-module "backups" {
-  source = "./backups"
-  example_aws_backup_service_role_arn = module.iam.example_aws_backup_service_role_arn
-}
+# module "backups" {
+#   source = "./backups"
+#   example_aws_backup_service_role_arn = module.iam.example_aws_backup_service_role_arn
+# }
 
 # module "key_pair" {
 #     source = "./key_pair"
@@ -116,16 +117,20 @@ module "backups" {
 #    value = module.subnets.public_subnet_1a_id
 # }
 
-output "bastion_host_public_ip" {
-  value = module.bastion_host.bastion_host_public_ip
+# output "bastion_host_public_ip" {
+#   value = module.bastion_host.bastion_host_public_ip
 
-}
+# }
 
 output "ec2_server_private_ip" {
   value = module.ec2_server.ec2_server_private_ip
 
 }
 
+output "password" {
+  value = module.iam.password
+  sensitive = true
+}
 
 
 # output "ec2_server_2_private_ip" {

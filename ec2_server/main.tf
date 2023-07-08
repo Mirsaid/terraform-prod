@@ -12,6 +12,7 @@ resource "aws_instance" "ec2_instance" {
               #!/bin/bash
               sudo apt-get update -y
               sudo apt-get install -y nfs-common
+              
               sudo mkdir /mnt/efs
               sudo echo "${var.efs_dns_name}:/ /mnt/efs nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,_netdev 0 0" >> /etc/fstab
               sudo mount -a

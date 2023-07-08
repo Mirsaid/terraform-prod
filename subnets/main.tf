@@ -46,6 +46,7 @@ resource "aws_subnet" "public_eu_central_1a" {
   }
 }
 
+
 # resource "aws_subnet" "public_us_east_1b" {
 #   vpc_id                  = var.vpc_id
 #   cidr_block              = "10.0.4.0/24"

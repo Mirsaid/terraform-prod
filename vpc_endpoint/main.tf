@@ -13,3 +13,4 @@ resource "aws_vpc_endpoint" "s3" { #type "Gateway"
 # }
 # POLICY
 }
+

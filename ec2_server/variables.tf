@@ -12,7 +12,8 @@ variable "ec2_sg_id" {
 
 variable "ami_id" {
   type = string
-  default = "ami-01a2825a801771f57" # Ubuntu 22.04 LTS AMI ID
+  #default = "ami-01a2825a801771f57" # Ubuntu 22.04 LTS AMI ID
+  default = "ami-0ab1a82de7ca5889c"
 }
 
 variable "instance_type" {
